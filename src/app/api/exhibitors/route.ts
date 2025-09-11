@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 
 type ExhibitorRow = {
   id: bigint;
@@ -11,7 +11,7 @@ type ExhibitorRow = {
   activities: string | null;
   target_markets: string | null;
   press_release: string | null;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 function isFrance(row: {
@@ -80,13 +80,13 @@ export async function GET(req: NextRequest) {
   const fr = searchParams.get('fr'); // "1"이면 프랑스만
   const take = Number(searchParams.get('take') ?? 50);
 
-  const where = q
+  const where: Prisma.exhibitors_prw_2025WhereInput = q
     ? {
         OR: [
-          { name: { contains: q, mode: 'insensitive' as const } },
-          { company_info: { contains: q, mode: 'insensitive' as const } },
-          { activities: { contains: q, mode: 'insensitive' as const } },
-          { target_markets: { contains: q, mode: 'insensitive' as const } },
+          { name: { contains: q, mode: 'insensitive' } },
+          { company_info: { contains: q, mode: 'insensitive' } },
+          { activities: { contains: q, mode: 'insensitive' } },
+          { target_markets: { contains: q, mode: 'insensitive' } },
         ],
       }
     : {};

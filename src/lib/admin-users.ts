@@ -18,6 +18,11 @@ export interface UpdateAdminUserData {
   password?: string;
 }
 
+export interface AdminUserUpdateData {
+  email?: string;
+  password_hash?: string;
+}
+
 export interface AdminUserFilters {
   search?: string;
   page?: number;
@@ -149,7 +154,7 @@ export async function updateAdminUser(
   id: string,
   data: UpdateAdminUserData
 ): Promise<AdminUser> {
-  const updateData: any = {};
+  const updateData: AdminUserUpdateData = {};
 
   if (data.email) {
     updateData.email = data.email;

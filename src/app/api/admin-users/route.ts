@@ -8,8 +8,8 @@ import {
 } from '@/lib/admin-users';
 
 // Check authentication
-function checkAuth() {
-  const cookieStore = cookies();
+async function checkAuth() {
+  const cookieStore = await cookies();
   const adminCookie = cookieStore.get('neba_admin');
 
   if (!adminCookie || !adminCookie.value) {
@@ -20,7 +20,7 @@ function checkAuth() {
 
 // GET /api/admin-users - List admin users
 export async function GET(request: NextRequest) {
-  if (!checkAuth()) {
+  if (!(await checkAuth())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin-users - Create admin user
 export async function POST(request: NextRequest) {
-  if (!checkAuth()) {
+  if (!(await checkAuth())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -83,10 +83,15 @@ export async function POST(request: NextRequest) {
     const user = await createAdminUser(userData);
 
     return NextResponse.json(user, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating admin user:', error);
 
-    if (error.code === 'P2002') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'P2002'
+    ) {
       return NextResponse.json(
         { error: 'Email already exists' },
         { status: 409 }

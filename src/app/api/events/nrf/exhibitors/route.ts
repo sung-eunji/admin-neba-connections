@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { computeFields, CategoryTag } from '@/lib/tagging';
+import type { Prisma } from '@/generated/prisma';
+
+// Re-export types for use in other components
+export type { CategoryTag } from '@/lib/tagging';
 
 export interface ExhibitorWithComputed {
   id: string;
@@ -58,7 +62,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * take;
 
     // Build where clause
-    const where: any = {};
+    const where: Prisma.exhibitors_prw_2025WhereInput = {};
 
     // Text search across multiple fields
     if (q) {
@@ -87,7 +91,7 @@ export async function GET(request: NextRequest) {
       const patterns = countryPatterns[country] || [country.toUpperCase()];
 
       where.OR = [
-        ...(where.OR || []),
+        ...(where.OR ?? []),
         ...patterns.map((pattern) => ({
           country: { contains: pattern, mode: 'insensitive' as const },
         })),

@@ -8,8 +8,8 @@ import {
 } from '@/lib/admin-users';
 
 // Check authentication
-function checkAuth() {
-  const cookieStore = cookies();
+async function checkAuth() {
+  const cookieStore = await cookies();
   const adminCookie = cookieStore.get('neba_admin');
 
   if (!adminCookie || !adminCookie.value) {
@@ -21,14 +21,15 @@ function checkAuth() {
 // GET /api/admin-users/[id] - Get admin user by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!checkAuth()) {
+  if (!(await checkAuth())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const user = await getAdminUserById(params.id);
+    const { id } = await params;
+    const user = await getAdminUserById(id);
 
     if (!user) {
       return NextResponse.json(
@@ -50,13 +51,14 @@ export async function GET(
 // PUT /api/admin-users/[id] - Update admin user
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!checkAuth()) {
+  if (!(await checkAuth())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
     const { email, password } = body;
 
@@ -90,19 +92,29 @@ export async function PUT(
     if (email) updateData.email = email;
     if (password) updateData.password = password;
 
-    const user = await updateAdminUser(params.id, updateData);
+    const user = await updateAdminUser(id, updateData);
     return NextResponse.json(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating admin user:', error);
 
-    if (error.code === 'P2002') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'P2002'
+    ) {
       return NextResponse.json(
         { error: 'Email already exists' },
         { status: 409 }
       );
     }
 
-    if (error.code === 'P2025') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'P2025'
+    ) {
       return NextResponse.json(
         { error: 'Admin user not found' },
         { status: 404 }
@@ -119,19 +131,25 @@ export async function PUT(
 // DELETE /api/admin-users/[id] - Delete admin user
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!checkAuth()) {
+  if (!(await checkAuth())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    await deleteAdminUser(params.id);
+    const { id } = await params;
+    await deleteAdminUser(id);
     return NextResponse.json({ message: 'Admin user deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting admin user:', error);
 
-    if (error.code === 'P2025') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === 'P2025'
+    ) {
       return NextResponse.json(
         { error: 'Admin user not found' },
         { status: 404 }

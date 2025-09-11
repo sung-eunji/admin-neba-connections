@@ -14,7 +14,7 @@ export async function login(formData: FormData) {
 
     if (user) {
       // Set HTTP-only cookie with user ID
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       cookieStore.set('neba_admin', user.id, {
         httpOnly: true,
         path: '/',
@@ -34,7 +34,8 @@ export async function login(formData: FormData) {
 }
 
 export async function logout() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.delete('neba_admin');
   redirect('/');
 }
+

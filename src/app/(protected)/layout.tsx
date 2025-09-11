@@ -3,13 +3,13 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import LogoutButton from './logout-button';
 
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   // Double-check authentication (middleware should handle this, but extra safety)
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const adminCookie = cookieStore.get('neba_admin');
 
   if (!adminCookie || !adminCookie.value) {

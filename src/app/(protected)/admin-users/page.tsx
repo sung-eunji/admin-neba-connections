@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
       const email = formData.get('email') as string;
       const password = formData.get('password') as string;
 
-      const updateData: any = {};
+      const updateData: { email?: string; password?: string } = {};
       if (email) updateData.email = email;
       if (password) updateData.password = password;
 

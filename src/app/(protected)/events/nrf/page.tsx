@@ -108,7 +108,7 @@ export default function NRFExhibitorsPage() {
     setCurrentPage(1);
   };
 
-  const handleCategoryClick = (category: string | any) => {
+  const handleCategoryClick = (category: string | unknown) => {
     if (!data || typeof category !== 'string') return;
 
     // 해당 카테고리의 전시자들을 필터링
@@ -133,7 +133,7 @@ export default function NRFExhibitorsPage() {
     }
   };
 
-  const formatCategoryName = (category: string | any): string => {
+  const formatCategoryName = (category: string | unknown): string => {
     if (typeof category !== 'string') {
       return 'Unknown';
     }

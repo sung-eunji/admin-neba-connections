@@ -3,9 +3,9 @@ import { cookies } from 'next/headers';
 import LoginForm from './login-form';
 import Image from 'next/image';
 
-export default function LoginPage() {
+export default async function LoginPage() {
   // Check if already logged in
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const adminCookie = cookieStore.get('neba_admin');
 
   if (adminCookie?.value) {
