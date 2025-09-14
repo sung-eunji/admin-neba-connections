@@ -30,7 +30,11 @@ export default function LoginForm() {
     <form action={handleSubmit} className="space-y-6">
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <div className="text-sm text-red-600">{error}</div>
+          <div className="text-sm text-red-600 font-medium mb-2">Login Failed</div>
+          <div className="text-xs text-red-500 whitespace-pre-line">{error}</div>
+          <div className="text-xs text-gray-500 mt-2">
+            Try: admin@neba.com / admin123
+          </div>
         </div>
       )}
 

@@ -14,9 +14,15 @@ export async function authenticateHybridAdmin(
 ): Promise<HybridAdminUser | null> {
   try {
     console.log('🔍 Hybrid auth attempt for email:', email);
+    console.log('🔍 Environment variables:', {
+      DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set',
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL ? 'Set' : 'Not set',
+      ADMIN_PASSWORD: process.env.ADMIN_PASSWORD ? 'Set' : 'Not set',
+    });
     
     // First, try to use Prisma (database)
     try {
+      console.log('🔄 Attempting PostgreSQL authentication...');
       const { authenticateAdminUser } = await import('./admin-users');
       const user = await authenticateAdminUser(email, password);
       if (user) {
@@ -27,6 +33,8 @@ export async function authenticateHybridAdmin(
           created_at: user.created_at || new Date().toISOString(),
           last_login: user.last_login,
         };
+      } else {
+        console.log('❌ Database authentication failed - user not found or invalid password');
       }
     } catch (prismaError) {
       console.log('⚠️ Prisma authentication failed, trying fallback:', prismaError);
@@ -39,23 +47,34 @@ export async function authenticateHybridAdmin(
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
     
+    console.log('🔍 Fallback credentials check:', {
+      expectedEmail: adminEmail,
+      inputEmail: email,
+      hasPassword: !!adminPassword,
+      hasPasswordHash: !!adminPasswordHash,
+    });
+    
     if (!adminEmail || (!adminPassword && !adminPasswordHash)) {
       console.error('❌ No fallback credentials configured');
       return null;
     }
     
     if (email !== adminEmail) {
-      console.log('❌ Email mismatch in fallback');
+      console.log('❌ Email mismatch in fallback:', { expected: adminEmail, received: email });
       return null;
     }
     
     let isValid = false;
     
     if (adminPasswordHash) {
+      console.log('🔄 Using bcrypt password hash comparison');
       isValid = await bcrypt.compare(password, adminPasswordHash);
     } else if (adminPassword) {
+      console.log('🔄 Using plain text password comparison');
       isValid = password === adminPassword;
     }
+    
+    console.log('🔍 Password validation result:', isValid);
     
     if (!isValid) {
       console.log('❌ Password mismatch in fallback');
