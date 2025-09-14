@@ -44,9 +44,10 @@ export async function login(formData: FormData) {
       email: email,
       timestamp: new Date().toISOString(),
     });
-    
+
     // Return more specific error message
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     return { error: `Login failed: ${errorMessage}` };
   }
 }
