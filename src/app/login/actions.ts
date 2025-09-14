@@ -46,6 +46,12 @@ export async function login(formData: FormData) {
       };
     }
   } catch (error) {
+    // Don't log NEXT_REDIRECT errors as they are normal for successful logins
+    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+      // This is a successful login redirect, not an actual error
+      return;
+    }
+    
     console.error('Login error:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
