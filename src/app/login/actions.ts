@@ -9,6 +9,12 @@ export async function login(formData: FormData) {
   const password = formData.get('password') as string;
 
   try {
+    console.log('🔍 Login attempt started:', { email, timestamp: new Date().toISOString() });
+    console.log('🔍 Environment check:', { 
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set'
+    });
+    
     // Authenticate using admin_users table
     const user = await authenticateAdminUser(email, password);
 
@@ -29,6 +35,12 @@ export async function login(formData: FormData) {
     }
   } catch (error) {
     console.error('Login error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      email: email,
+      timestamp: new Date().toISOString()
+    });
     return { error: 'An error occurred during login' };
   }
 }
@@ -38,4 +50,3 @@ export async function logout() {
   cookieStore.delete('neba_admin');
   redirect('/');
 }
-

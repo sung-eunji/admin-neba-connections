@@ -187,37 +187,50 @@ export async function authenticateAdminUser(
   email: string,
   password: string
 ): Promise<AdminUser | null> {
-  const user = await getAdminUserByEmail(email);
+  try {
+    console.log('🔍 Starting authentication for email:', email);
+    
+    const user = await getAdminUserByEmail(email);
 
-  if (!user) {
-    console.log('❌ User not found for email:', email);
-    return null;
+    if (!user) {
+      console.log('❌ User not found for email:', email);
+      return null;
+    }
+
+    // Debug: Print input password and stored password
+    console.log('🔍 Login Debug Info:');
+    console.log('📧 Email:', email);
+    console.log('🔑 Input password:', password);
+    console.log('💾 Stored password hash:', user.password_hash);
+    
+    // Compare using bcrypt
+    const isValid = await bcrypt.compare(password, user.password_hash);
+    console.log('✅ Passwords match:', isValid);
+
+    if (!isValid) {
+      console.log('❌ Password mismatch!');
+      return null;
+    }
+
+    console.log('✅ Authentication successful!');
+
+    // Update last login
+    await updateLastLogin(user.id);
+
+    return {
+      id: user.id,
+      email: user.email,
+      created_at: user.created_at?.toISOString() || null,
+      last_login: user.last_login?.toISOString() || null,
+    };
+  } catch (error) {
+    console.error('❌ Authentication error:', error);
+    console.error('Error in authenticateAdminUser:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      email: email,
+      timestamp: new Date().toISOString()
+    });
+    throw error; // Re-throw to be caught by the calling function
   }
-
-  // Debug: Print input password and stored password
-  console.log('🔍 Login Debug Info:');
-  console.log('📧 Email:', email);
-  console.log('🔑 Input password:', password);
-  console.log('💾 Stored password hash:', user.password_hash);
-
-  // Compare using bcrypt
-  const isValid = await bcrypt.compare(password, user.password_hash);
-  console.log('✅ Passwords match:', isValid);
-
-  if (!isValid) {
-    console.log('❌ Password mismatch!');
-    return null;
-  }
-
-  console.log('✅ Authentication successful!');
-
-  // Update last login
-  await updateLastLogin(user.id);
-
-  return {
-    id: user.id,
-    email: user.email,
-    created_at: user.created_at?.toISOString() || null,
-    last_login: user.last_login?.toISOString() || null,
-  };
 }
