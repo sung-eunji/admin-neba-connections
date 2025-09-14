@@ -19,11 +19,14 @@ export async function authenticateHardcodedAdmin(
 ): Promise<HardcodedAdminUser | null> {
   try {
     console.log('🔍 Hardcoded auth attempt for email:', email);
-    
+
     // Check credentials
-    if (email === HARDCODED_ADMIN.email && password === HARDCODED_ADMIN.password) {
+    if (
+      email === HARDCODED_ADMIN.email &&
+      password === HARDCODED_ADMIN.password
+    ) {
       console.log('✅ Hardcoded authentication successful!');
-      
+
       return {
         id: HARDCODED_ADMIN.id,
         email: HARDCODED_ADMIN.email,
@@ -31,7 +34,7 @@ export async function authenticateHardcodedAdmin(
         last_login: new Date().toISOString(),
       };
     }
-    
+
     console.log('❌ Invalid credentials');
     return null;
   } catch (error) {
@@ -41,7 +44,9 @@ export async function authenticateHardcodedAdmin(
 }
 
 // Get admin user by ID
-export async function getHardcodedAdminById(id: string): Promise<HardcodedAdminUser | null> {
+export async function getHardcodedAdminById(
+  id: string
+): Promise<HardcodedAdminUser | null> {
   if (id === HARDCODED_ADMIN.id) {
     return {
       id: HARDCODED_ADMIN.id,
