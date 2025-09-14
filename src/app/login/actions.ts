@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { authenticatePostgresAdmin } from '@/lib/postgres-auth';
+import { authenticateHybridAdmin } from '@/lib/hybrid-auth';
 
 export async function login(formData: FormData) {
   const email = formData.get('username') as string;
@@ -18,8 +18,8 @@ export async function login(formData: FormData) {
       DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set',
     });
 
-    // Authenticate using direct PostgreSQL connection (no Prisma needed)
-    const user = await authenticatePostgresAdmin(email, password);
+    // Authenticate using hybrid method (PostgreSQL + fallback)
+    const user = await authenticateHybridAdmin(email, password);
 
     if (user) {
       // Set HTTP-only cookie with user ID

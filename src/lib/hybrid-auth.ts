@@ -32,11 +32,11 @@ export async function authenticateHybridAdmin(
       console.log('⚠️ Prisma authentication failed, trying fallback:', prismaError);
     }
     
-    // Fallback to environment variables
+    // Fallback to environment variables or hardcoded credentials
     console.log('🔄 Falling back to environment variable authentication');
     
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@neba.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
     
     if (!adminEmail || (!adminPassword && !adminPasswordHash)) {
@@ -97,10 +97,7 @@ export async function getHybridAdminById(id: string): Promise<HybridAdminUser | 
     
     // Fallback for fallback-admin ID
     if (id === 'fallback-admin') {
-      const adminEmail = process.env.ADMIN_EMAIL;
-      if (!adminEmail) {
-        return null;
-      }
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@neba.com';
       
       return {
         id: 'fallback-admin',

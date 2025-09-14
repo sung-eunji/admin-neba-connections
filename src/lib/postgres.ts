@@ -5,13 +5,22 @@ let pool: Pool | null = null;
 
 function getPool(): Pool {
   if (!pool) {
-    pool = new Pool({
+    const config: any = {
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+      max: 5, // Reduce pool size for serverless
+      idleTimeoutMillis: 10000,
+      connectionTimeoutMillis: 5000,
+    };
+
+    // SSL configuration for production
+    if (process.env.NODE_ENV === 'production') {
+      config.ssl = {
+        rejectUnauthorized: false,
+        require: true,
+      };
+    }
+
+    pool = new Pool(config);
   }
   return pool;
 }
