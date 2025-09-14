@@ -21,7 +21,12 @@ export async function authenticateHybridAdmin(
       const user = await authenticateAdminUser(email, password);
       if (user) {
         console.log('✅ Database authentication successful!');
-        return user;
+        return {
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at || new Date().toISOString(),
+          last_login: user.last_login,
+        };
       }
     } catch (prismaError) {
       console.log('⚠️ Prisma authentication failed, trying fallback:', prismaError);
@@ -79,9 +84,14 @@ export async function getHybridAdminById(id: string): Promise<HybridAdminUser | 
       const { getAdminUserById } = await import('./admin-users');
       const user = await getAdminUserById(id);
       if (user) {
-        return user;
+        return {
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at || new Date().toISOString(),
+          last_login: user.last_login,
+        };
       }
-    } catch (prismaError) {
+    } catch {
       console.log('⚠️ Prisma getAdminUserById failed, trying fallback');
     }
     

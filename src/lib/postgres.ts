@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool } from 'pg';
 
 // PostgreSQL connection pool
 let pool: Pool | null = null;
@@ -17,7 +17,7 @@ function getPool(): Pool {
 }
 
 // Execute a query and return results
-export async function query<T = any>(text: string, params?: any[]): Promise<T[]> {
+export async function query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]> {
   const client = await getPool().connect();
   try {
     const result = await client.query(text, params);
@@ -28,13 +28,13 @@ export async function query<T = any>(text: string, params?: any[]): Promise<T[]>
 }
 
 // Execute a query and return single row
-export async function queryOne<T = any>(text: string, params?: any[]): Promise<T | null> {
+export async function queryOne<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T | null> {
   const rows = await query<T>(text, params);
   return rows.length > 0 ? rows[0] : null;
 }
 
 // Execute a query and return count
-export async function queryCount(text: string, params?: any[]): Promise<number> {
+export async function queryCount(text: string, params?: unknown[]): Promise<number> {
   const result = await query<{ count: string }>(text, params);
   return parseInt(result[0]?.count || '0');
 }

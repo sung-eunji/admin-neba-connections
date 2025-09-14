@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPostgresExhibitors, getPostgresFranceExhibitors } from '@/lib/postgres-exhibitors';
+import {
+  getPostgresExhibitors,
+  getPostgresFranceExhibitors,
+} from '@/lib/postgres-exhibitors';
 
 type ExhibitorRow = {
   id: bigint;
@@ -82,12 +85,12 @@ export async function GET(req: NextRequest) {
 
     // Use direct PostgreSQL connection (no Prisma needed)
     let rows: ExhibitorRow[] = [];
-    
+
     try {
       if (fr === '1') {
         // Get France-only exhibitors
         const franceExhibitors = await getPostgresFranceExhibitors(q, take);
-        rows = franceExhibitors.map(exhibitor => ({
+        rows = franceExhibitors.map((exhibitor) => ({
           id: BigInt(exhibitor.id),
           name: exhibitor.name,
           country: exhibitor.country,
@@ -100,7 +103,7 @@ export async function GET(req: NextRequest) {
       } else {
         // Get all exhibitors
         const result = await getPostgresExhibitors(q, take, 0);
-        rows = result.items.map(exhibitor => ({
+        rows = result.items.map((exhibitor) => ({
           id: BigInt(exhibitor.id),
           name: exhibitor.name,
           country: exhibitor.country,
@@ -113,7 +116,7 @@ export async function GET(req: NextRequest) {
       }
     } catch (postgresError) {
       console.log('⚠️ PostgreSQL failed, using mock data:', postgresError);
-      
+
       // Mock data for when PostgreSQL fails
       rows = [
         {

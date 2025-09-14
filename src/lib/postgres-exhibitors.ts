@@ -27,7 +27,7 @@ export async function getPostgresExhibitors(
 ): Promise<{ items: PostgresExhibitor[]; total: number }> {
   try {
     let whereClause = '';
-    let params: any[] = [];
+    let params: unknown[] = [];
     
     if (searchQuery) {
       whereClause = `WHERE 
@@ -109,7 +109,7 @@ export async function getPostgresFranceExhibitors(
       address ILIKE '%marseille%' OR 
       company_info ILIKE '%france%'`;
     
-    let params: any[] = [];
+    let params: unknown[] = [];
     
     if (searchQuery) {
       whereClause += ` AND (
