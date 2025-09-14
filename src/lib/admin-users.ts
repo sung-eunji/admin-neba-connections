@@ -189,7 +189,7 @@ export async function authenticateAdminUser(
 ): Promise<AdminUser | null> {
   try {
     console.log('🔍 Starting authentication for email:', email);
-    
+
     const user = await getAdminUserByEmail(email);
 
     if (!user) {
@@ -202,7 +202,7 @@ export async function authenticateAdminUser(
     console.log('📧 Email:', email);
     console.log('🔑 Input password:', password);
     console.log('💾 Stored password hash:', user.password_hash);
-    
+
     // Compare using bcrypt
     const isValid = await bcrypt.compare(password, user.password_hash);
     console.log('✅ Passwords match:', isValid);
@@ -229,7 +229,7 @@ export async function authenticateAdminUser(
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       email: email,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     throw error; // Re-throw to be caught by the calling function
   }

@@ -17,7 +17,8 @@ export default function LoginForm() {
         setError(result.error);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(`Login failed: ${errorMessage}`);
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);
