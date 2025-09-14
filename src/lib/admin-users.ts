@@ -36,29 +36,14 @@ export interface AdminUsersResponse {
   totalPages: number;
 }
 
-// Hash password
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
-}
-
-// Verify password
-export async function verifyPassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
 // Create admin user
 export async function createAdminUser(
   data: CreateAdminUserData
 ): Promise<AdminUser> {
-  const passwordHash = await hashPassword(data.password);
-
   const user = await prisma.admin_user.create({
     data: {
       email: data.email,
-      password_hash: passwordHash,
+      password_hash: data.password, // Store as plain text
     },
     select: {
       id: true,
@@ -161,7 +146,7 @@ export async function updateAdminUser(
   }
 
   if (data.password) {
-    updateData.password_hash = await hashPassword(data.password);
+    updateData.password_hash = data.password; // Store as plain text
   }
 
   const user = await prisma.admin_user.update({
@@ -205,14 +190,26 @@ export async function authenticateAdminUser(
   const user = await getAdminUserByEmail(email);
 
   if (!user) {
+    console.log('❌ User not found for email:', email);
     return null;
   }
 
-  const isValid = await verifyPassword(password, user.password_hash);
+  // Debug: Print input password and stored password
+  console.log('🔍 Login Debug Info:');
+  console.log('📧 Email:', email);
+  console.log('🔑 Input password:', password);
+  console.log('💾 Stored password hash:', user.password_hash);
+
+  // Compare using bcrypt
+  const isValid = await bcrypt.compare(password, user.password_hash);
+  console.log('✅ Passwords match:', isValid);
 
   if (!isValid) {
+    console.log('❌ Password mismatch!');
     return null;
   }
+
+  console.log('✅ Authentication successful!');
 
   // Update last login
   await updateLastLogin(user.id);
