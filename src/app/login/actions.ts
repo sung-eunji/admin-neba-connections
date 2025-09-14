@@ -51,7 +51,7 @@ export async function login(formData: FormData) {
       // This is a successful login redirect, not an actual error
       return;
     }
-    
+
     console.error('Login error:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
