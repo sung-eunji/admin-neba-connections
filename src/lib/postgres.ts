@@ -5,7 +5,16 @@ let pool: Pool | null = null;
 
 function getPool(): Pool {
   if (!pool) {
-    const config: any = {
+    const config: {
+      connectionString: string | undefined;
+      max: number;
+      idleTimeoutMillis: number;
+      connectionTimeoutMillis: number;
+      ssl?: {
+        rejectUnauthorized: boolean;
+        require: boolean;
+      };
+    } = {
       connectionString: process.env.DATABASE_URL,
       max: 5, // Reduce pool size for serverless
       idleTimeoutMillis: 10000,
