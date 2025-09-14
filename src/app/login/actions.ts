@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { authenticateAdminUser } from '@/lib/admin-users';
+import { authenticateHardcodedAdmin } from '@/lib/hardcoded-auth';
 
 export async function login(formData: FormData) {
   const email = formData.get('username') as string;
@@ -18,8 +18,8 @@ export async function login(formData: FormData) {
       DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set',
     });
 
-    // Authenticate using admin_users table
-    const user = await authenticateAdminUser(email, password);
+    // Authenticate using hardcoded credentials (no database needed)
+    const user = await authenticateHardcodedAdmin(email, password);
 
     if (user) {
       // Set HTTP-only cookie with user ID
