@@ -60,19 +60,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const skip = (page - 1) * take;
 
-    // Build Supabase query
+    // Build Supabase query - start simple
     let query = supabaseAdmin
       .from('exhibitors_prw_2025')
       .select('*', { count: 'exact' });
 
-    // Text search across multiple fields
+    // Text search - use simpler approach
     if (q) {
-      query = query.or(
-        `name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`
-      );
+      query = query.ilike('name', `%${q}%`);
     }
 
-    // Country filter
+    // Country filter - use simpler approach
     if (country !== 'all') {
       const countryPatterns: Record<string, string[]> = {
         France: ['FRANCE'],
@@ -86,10 +84,8 @@ export async function GET(request: NextRequest) {
       };
 
       const patterns = countryPatterns[country] || [country.toUpperCase()];
-      const countryFilter = patterns
-        .map((pattern) => `country.ilike.%${pattern}%`)
-        .join(',');
-      query = query.or(countryFilter);
+      // Use the first pattern for now
+      query = query.ilike('country', `%${patterns[0]}%`);
     }
 
     // Get total count and data with pagination
@@ -102,9 +98,24 @@ export async function GET(request: NextRequest) {
       .range(skip, skip + take - 1);
 
     if (error) {
-      console.error('Supabase query error:', error);
+      console.error('❌ Supabase query error:', error);
+      console.error('❌ Query details:', {
+        q,
+        country,
+        take,
+        page,
+        skip,
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
       return NextResponse.json(
-        { error: 'Failed to fetch exhibitors' },
+        {
+          error: 'Failed to fetch exhibitors',
+          details: error.message,
+          code: error.code,
+        },
         { status: 500 }
       );
     }
@@ -135,7 +146,13 @@ export async function GET(request: NextRequest) {
           activities: exhibitor.activities,
           target_markets: exhibitor.target_markets,
           press_release: exhibitor.press_release,
-          crawled_at: exhibitor.crawled_at?.toISOString() || null,
+          crawled_at: exhibitor.crawled_at
+            ? typeof exhibitor.crawled_at === 'string'
+              ? exhibitor.crawled_at
+              : exhibitor.crawled_at instanceof Date
+              ? exhibitor.crawled_at.toISOString()
+              : null
+            : null,
           ...computed,
         };
       }
@@ -149,11 +166,9 @@ export async function GET(request: NextRequest) {
     // Get facets for current query (without candidate filter for broader stats)
     let facetsQuery = supabaseAdmin.from('exhibitors_prw_2025').select('*');
 
-    // Apply same filters for facets
+    // Apply same filters for facets - use simpler approach
     if (q) {
-      facetsQuery = facetsQuery.or(
-        `name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`
-      );
+      facetsQuery = facetsQuery.ilike('name', `%${q}%`);
     }
 
     if (country !== 'all') {
@@ -169,17 +184,22 @@ export async function GET(request: NextRequest) {
       };
 
       const patterns = countryPatterns[country] || [country.toUpperCase()];
-      const countryFilter = patterns
-        .map((pattern) => `country.ilike.%${pattern}%`)
-        .join(',');
-      facetsQuery = facetsQuery.or(countryFilter);
+      facetsQuery = facetsQuery.ilike('country', `%${patterns[0]}%`);
     }
 
     const { data: allExhibitorsForFacets, error: facetsError } =
       await facetsQuery;
 
     if (facetsError) {
-      console.error('Supabase facets query error:', facetsError);
+      console.error('❌ Supabase facets query error:', facetsError);
+      console.error('❌ Facets query details:', {
+        q,
+        country,
+        error: facetsError.message,
+        code: facetsError.code,
+        details: facetsError.details,
+        hint: facetsError.hint,
+      });
     }
 
     const allItemsWithComputed = (allExhibitorsForFacets || []).map(
@@ -251,9 +271,19 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching exhibitors:', error);
+    console.error('❌ Error fetching exhibitors:', error);
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch exhibitors' },
+      {
+        error: 'Failed to fetch exhibitors',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     );
   }

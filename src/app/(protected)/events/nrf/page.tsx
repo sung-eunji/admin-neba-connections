@@ -69,7 +69,18 @@ export default function NRFExhibitorsPage() {
 
       const response = await fetch(`/api/events/nrf/exhibitors?${params}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch data');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          errorData,
+        });
+        throw new Error(
+          `API Error ${response.status}: ${
+            errorData.details || errorData.error || response.statusText
+          }`
+        );
       }
 
       const result = await response.json();
@@ -87,6 +98,12 @@ export default function NRFExhibitorsPage() {
 
       setError(null);
     } catch (err) {
+      console.error('❌ Fetch error:', err);
+      console.error('❌ Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        timestamp: new Date().toISOString(),
+      });
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
