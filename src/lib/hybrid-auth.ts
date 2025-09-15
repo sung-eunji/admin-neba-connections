@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 
 export interface HybridAdminUser {
-  id: string;
+  id: bigint | string;
   email: string;
   created_at: string;
   last_login: string | null;
@@ -96,12 +96,12 @@ export async function authenticateHybridAdmin(
 }
 
 // Get admin user by ID with fallback
-export async function getHybridAdminById(id: string): Promise<HybridAdminUser | null> {
+export async function getHybridAdminById(id: bigint | string): Promise<HybridAdminUser | null> {
   try {
     // Try Prisma first
     try {
       const { getAdminUserById } = await import('./admin-users');
-      const user = await getAdminUserById(id);
+      const user = await getAdminUserById(typeof id === 'string' ? BigInt(id) : id);
       if (user) {
         return {
           id: user.id,

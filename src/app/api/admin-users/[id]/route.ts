@@ -29,7 +29,7 @@ export async function GET(
 
   try {
     const { id } = await params;
-    const user = await getAdminUserById(id);
+    const user = await getAdminUserById(BigInt(id));
 
     if (!user) {
       return NextResponse.json(
@@ -92,7 +92,7 @@ export async function PUT(
     if (email) updateData.email = email;
     if (password) updateData.password = password;
 
-    const user = await updateAdminUser(id, updateData);
+    const user = await updateAdminUser(BigInt(id), updateData);
     return NextResponse.json(user);
   } catch (error: unknown) {
     console.error('Error updating admin user:', error);
@@ -139,7 +139,7 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await deleteAdminUser(id);
+    await deleteAdminUser(BigInt(id));
     return NextResponse.json({ message: 'Admin user deleted successfully' });
   } catch (error: unknown) {
     console.error('Error deleting admin user:', error);

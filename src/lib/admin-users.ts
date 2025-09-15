@@ -2,7 +2,7 @@ import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
 export interface AdminUser {
-  id: string;
+  id: bigint;
   email: string;
   created_at: string | null;
   last_login: string | null;
@@ -68,7 +68,7 @@ export async function getAdminUserByEmail(email: string) {
 }
 
 // Get admin user by ID
-export async function getAdminUserById(id: string): Promise<AdminUser | null> {
+export async function getAdminUserById(id: bigint): Promise<AdminUser | null> {
   const user = await prisma.admin_user.findUnique({
     where: { id },
     select: {
@@ -136,7 +136,7 @@ export async function listAdminUsers(
 
 // Update admin user
 export async function updateAdminUser(
-  id: string,
+  id: bigint,
   data: UpdateAdminUserData
 ): Promise<AdminUser> {
   const updateData: AdminUserUpdateData = {};
@@ -168,14 +168,14 @@ export async function updateAdminUser(
 }
 
 // Delete admin user
-export async function deleteAdminUser(id: string): Promise<void> {
+export async function deleteAdminUser(id: bigint): Promise<void> {
   await prisma.admin_user.delete({
     where: { id },
   });
 }
 
 // Update last login
-export async function updateLastLogin(id: string): Promise<void> {
+export async function updateLastLogin(id: bigint): Promise<void> {
   await prisma.admin_user.update({
     where: { id },
     data: { last_login: new Date() },
