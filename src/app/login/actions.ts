@@ -31,60 +31,57 @@ export async function login(formData: FormData) {
       };
     }
 
-    // Try Supabase authentication
-    console.log('🔍 Attempting Supabase authentication...');
-    const { data: supabaseUser, error: supabaseError } =
-      await supabaseAdmin.auth.signInWithPassword({
-        email,
-        password,
-      });
+    // Try Supabase admin_user table authentication
+    console.log('🔍 Attempting Supabase admin_user table authentication...');
+    
+    // Get user from admin_user table
+    const { data: adminUser, error: userError } = await supabaseAdmin
+      .from('admin_user')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-    if (supabaseUser?.user && !supabaseError) {
-      console.log(
-        '✅ Supabase authentication successful:',
-        supabaseUser.user.id
-      );
-      const user = {
-        id: supabaseUser.user.id,
-        email: supabaseUser.user.email,
-        name: supabaseUser.user.user_metadata?.name || email,
+    if (userError || !adminUser) {
+      console.log('❌ User not found in admin_user table:', userError?.message);
+      return {
+        error: 'Invalid email or password. Please check your credentials.',
       };
-
-      console.log('✅ Login successful for user:', user.id);
-
-      // Set HTTP-only cookie with user ID
-      const cookieStore = await cookies();
-      cookieStore.set('neba_admin', user.id.toString(), {
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      });
-
-      // Redirect to dashboard
-      redirect('/events/nrf');
-    } else {
-      console.log('❌ Supabase authentication failed:', supabaseError?.message);
-      console.log('❌ Supabase error details:', supabaseError);
-
-      // More specific error messages
-      if (supabaseError?.message?.includes('Invalid login credentials')) {
-        return {
-          error: 'Invalid email or password. Please check your credentials.',
-        };
-      } else if (supabaseError?.message?.includes('Email not confirmed')) {
-        return {
-          error:
-            'Please check your email and confirm your account before logging in.',
-        };
-      } else {
-        return {
-          error: `Authentication failed: ${
-            supabaseError?.message || 'Unknown error'
-          }. Please try again.`,
-        };
-      }
     }
+
+    console.log('✅ User found in admin_user table:', adminUser.id);
+
+    // Verify password using bcrypt
+    const bcrypt = await import('bcryptjs');
+    const isValidPassword = await bcrypt.compare(password, adminUser.password_hash);
+
+    if (!isValidPassword) {
+      console.log('❌ Invalid password for user:', email);
+      return {
+        error: 'Invalid email or password. Please check your credentials.',
+      };
+    }
+
+    console.log('✅ Password verification successful for user:', adminUser.id);
+
+    // Update last login
+    await supabaseAdmin
+      .from('admin_user')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', adminUser.id);
+
+    // Set HTTP-only cookie with user ID
+    const cookieStore = await cookies();
+    cookieStore.set('neba_admin', adminUser.id.toString(), {
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    console.log('✅ Login successful for user:', adminUser.id);
+
+    // Redirect to dashboard
+    redirect('/events/nrf');
   } catch (error) {
     // Don't log NEXT_REDIRECT errors as they are normal for successful logins
     if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -123,13 +120,6 @@ export async function login(formData: FormData) {
 }
 
 export async function logout() {
-  try {
-    // Sign out from Supabase
-    await supabaseAdmin.auth.signOut();
-  } catch (error) {
-    console.log('Supabase logout error (non-critical):', error);
-  }
-
   const cookieStore = await cookies();
   cookieStore.delete('neba_admin');
   redirect('/');
