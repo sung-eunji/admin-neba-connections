@@ -33,7 +33,7 @@ export async function login(formData: FormData) {
 
     // Try Supabase admin_user table authentication
     console.log('🔍 Attempting Supabase admin_user table authentication...');
-    
+
     // Get user from admin_user table
     const { data: adminUser, error: userError } = await supabaseAdmin
       .from('admin_user')
@@ -52,7 +52,10 @@ export async function login(formData: FormData) {
 
     // Verify password using bcrypt
     const bcrypt = await import('bcryptjs');
-    const isValidPassword = await bcrypt.compare(password, adminUser.password_hash);
+    const isValidPassword = await bcrypt.compare(
+      password,
+      adminUser.password_hash
+    );
 
     if (!isValidPassword) {
       console.log('❌ Invalid password for user:', email);

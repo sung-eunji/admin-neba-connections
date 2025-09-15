@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { supabaseAdmin } from '@/lib/supabase';
 import { computeFields, CategoryTag } from '@/lib/tagging';
-import type { Prisma } from '@/generated/prisma';
 
 // Re-export types for use in other components
 export type { CategoryTag } from '@/lib/tagging';
@@ -61,22 +60,18 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const skip = (page - 1) * take;
 
-    // Build where clause
-    const where: Prisma.exhibitors_prw_2025WhereInput = {};
+    // Build Supabase query
+    let query = supabaseAdmin
+      .from('exhibitors_prw_2025')
+      .select('*', { count: 'exact' });
 
     // Text search across multiple fields
     if (q) {
-      where.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { company_info: { contains: q, mode: 'insensitive' } },
-        { activities: { contains: q, mode: 'insensitive' } },
-        { target_markets: { contains: q, mode: 'insensitive' } },
-      ];
+      query = query.or(`name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`);
     }
 
-    // Country filter - filter by country name extracted from address
+    // Country filter
     if (country !== 'all') {
-      // Create a list of possible address patterns for the country
       const countryPatterns: Record<string, string[]> = {
         France: ['FRANCE'],
         Spain: ['SPAIN'],
@@ -89,25 +84,19 @@ export async function GET(request: NextRequest) {
       };
 
       const patterns = countryPatterns[country] || [country.toUpperCase()];
-
-      where.OR = [
-        ...(where.OR ?? []),
-        ...patterns.map((pattern) => ({
-          country: { contains: pattern, mode: 'insensitive' as const },
-        })),
-      ];
+      const countryFilter = patterns.map(pattern => `country.ilike.%${pattern}%`).join(',');
+      query = query.or(countryFilter);
     }
 
-    // Get total count for pagination
-    const total = await prisma.exhibitors_prw_2025.count({ where });
+    // Get total count and data with pagination
+    const { data: exhibitors, count: total, error } = await query
+      .order('name', { ascending: true })
+      .range(skip, skip + take - 1);
 
-    // Get exhibitors with pagination
-    const exhibitors = await prisma.exhibitors_prw_2025.findMany({
-      where,
-      skip,
-      take,
-      orderBy: { name: 'asc' },
-    });
+    if (error) {
+      console.error('Supabase query error:', error);
+      return NextResponse.json({ error: 'Failed to fetch exhibitors' }, { status: 500 });
+    }
 
     // Compute fields for each exhibitor
     const itemsWithComputed: ExhibitorWithComputed[] = exhibitors.map(
@@ -147,11 +136,39 @@ export async function GET(request: NextRequest) {
       : itemsWithComputed;
 
     // Get facets for current query (without candidate filter for broader stats)
-    const allExhibitorsForFacets = await prisma.exhibitors_prw_2025.findMany({
-      where,
-    });
+    let facetsQuery = supabaseAdmin
+      .from('exhibitors_prw_2025')
+      .select('*');
 
-    const allItemsWithComputed = allExhibitorsForFacets.map((exhibitor) => {
+    // Apply same filters for facets
+    if (q) {
+      facetsQuery = facetsQuery.or(`name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`);
+    }
+
+    if (country !== 'all') {
+      const countryPatterns: Record<string, string[]> = {
+        France: ['FRANCE'],
+        Spain: ['SPAIN'],
+        Italy: ['ITALY'],
+        Netherlands: ['NETHERLANDS'],
+        China: ['CHINA'],
+        Taiwan: ['TAIWAN'],
+        'United States': ['UNITED STATES', 'UNITED'],
+        Romania: ['ROMANIA'],
+      };
+
+      const patterns = countryPatterns[country] || [country.toUpperCase()];
+      const countryFilter = patterns.map(pattern => `country.ilike.%${pattern}%`).join(',');
+      facetsQuery = facetsQuery.or(countryFilter);
+    }
+
+    const { data: allExhibitorsForFacets, error: facetsError } = await facetsQuery;
+
+    if (facetsError) {
+      console.error('Supabase facets query error:', facetsError);
+    }
+
+    const allItemsWithComputed = (allExhibitorsForFacets || []).map((exhibitor) => {
       const computed = computeFields(
         exhibitor.name,
         exhibitor.country,
@@ -208,7 +225,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count);
 
     const response: ExhibitorsResponse = {
-      total: candidate ? filteredItems.length : total,
+      total: candidate ? filteredItems.length : (total || 0),
       items: filteredItems,
       facets: {
         byCountry,

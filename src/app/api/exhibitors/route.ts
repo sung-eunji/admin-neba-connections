@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getPostgresExhibitors,
-  getPostgresFranceExhibitors,
-} from '@/lib/postgres-exhibitors';
+import { supabaseAdmin } from '@/lib/supabase';
 
 type ExhibitorRow = {
   id: bigint;
@@ -83,27 +80,30 @@ export async function GET(req: NextRequest) {
     const fr = searchParams.get('fr'); // "1"이면 프랑스만
     const take = Number(searchParams.get('take') ?? 50);
 
-    // Use direct PostgreSQL connection (no Prisma needed)
+    // Use Supabase connection
     let rows: ExhibitorRow[] = [];
 
     try {
+      let query = supabaseAdmin
+        .from('exhibitors_prw_2025')
+        .select('*')
+        .limit(take);
+
       if (fr === '1') {
         // Get France-only exhibitors
-        const franceExhibitors = await getPostgresFranceExhibitors(q, take);
-        rows = franceExhibitors.map((exhibitor) => ({
-          id: BigInt(exhibitor.id),
-          name: exhibitor.name,
-          country: exhibitor.country,
-          address: exhibitor.address,
-          company_info: exhibitor.company_info,
-          activities: exhibitor.activities,
-          target_markets: exhibitor.target_markets,
-          press_release: exhibitor.press_release,
-        }));
-      } else {
-        // Get all exhibitors
-        const result = await getPostgresExhibitors(q, take, 0);
-        rows = result.items.map((exhibitor) => ({
+        query = query.ilike('country', '%FRANCE%');
+      }
+
+      if (q) {
+        query = query.or(`name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`);
+      }
+
+      const { data: exhibitors, error } = await query.order('name', { ascending: true });
+
+      if (error) {
+        console.error('Supabase query error:', error);
+      } else if (exhibitors) {
+        rows = exhibitors.map((exhibitor) => ({
           id: BigInt(exhibitor.id),
           name: exhibitor.name,
           country: exhibitor.country,
@@ -114,8 +114,8 @@ export async function GET(req: NextRequest) {
           press_release: exhibitor.press_release,
         }));
       }
-    } catch (postgresError) {
-      console.log('⚠️ PostgreSQL failed, using mock data:', postgresError);
+    } catch (supabaseError) {
+      console.log('⚠️ Supabase failed, using mock data:', supabaseError);
 
       // Mock data for when PostgreSQL fails
       rows = [
