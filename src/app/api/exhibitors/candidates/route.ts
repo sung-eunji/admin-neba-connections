@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getPostgresExhibitors } from '@/lib/postgres-exhibitors';
+import { supabaseAdmin } from '@/lib/supabase';
 import { computeFields } from '@/lib/tagging';
 
 export async function GET(request: NextRequest) {
@@ -16,19 +16,29 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const take = parseInt(searchParams.get('take') || '100');
 
-    // Try to use PostgreSQL first, fallback to mock data
+    // Try to use Supabase first, fallback to mock data
     let exhibitors;
     
     try {
-      const result = await getPostgresExhibitors('', take, 0);
-      exhibitors = result.items;
-    } catch (postgresError) {
-      console.log('⚠️ PostgreSQL failed, using mock data:', postgresError);
+      const { data, error } = await supabaseAdmin
+        .from('exhibitors_prw_2025')
+        .select('*')
+        .limit(take)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+
+      exhibitors = data || [];
+    } catch (supabaseError) {
+      console.log('⚠️ Supabase failed, using mock data:', supabaseError);
       
-      // Mock data for when PostgreSQL fails
+      // Mock data for when Supabase fails
       exhibitors = [
         {
-          id: '1',
+          id: 1,
           name: 'Sample Fashion Brand',
           country: 'France',
           address: 'Paris, France',
@@ -37,7 +47,7 @@ export async function GET(request: NextRequest) {
           target_markets: 'European fashion market',
         },
         {
-          id: '2',
+          id: 2,
           name: 'Tech Marketplace',
           country: 'Germany',
           address: 'Berlin, Germany',

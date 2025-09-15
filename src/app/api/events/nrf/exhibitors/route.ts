@@ -67,7 +67,9 @@ export async function GET(request: NextRequest) {
 
     // Text search across multiple fields
     if (q) {
-      query = query.or(`name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`);
+      query = query.or(
+        `name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`
+      );
     }
 
     // Country filter
@@ -84,18 +86,27 @@ export async function GET(request: NextRequest) {
       };
 
       const patterns = countryPatterns[country] || [country.toUpperCase()];
-      const countryFilter = patterns.map(pattern => `country.ilike.%${pattern}%`).join(',');
+      const countryFilter = patterns
+        .map((pattern) => `country.ilike.%${pattern}%`)
+        .join(',');
       query = query.or(countryFilter);
     }
 
     // Get total count and data with pagination
-    const { data: exhibitors, count: total, error } = await query
+    const {
+      data: exhibitors,
+      count: total,
+      error,
+    } = await query
       .order('name', { ascending: true })
       .range(skip, skip + take - 1);
 
     if (error) {
       console.error('Supabase query error:', error);
-      return NextResponse.json({ error: 'Failed to fetch exhibitors' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to fetch exhibitors' },
+        { status: 500 }
+      );
     }
 
     // Compute fields for each exhibitor
@@ -136,13 +147,13 @@ export async function GET(request: NextRequest) {
       : itemsWithComputed;
 
     // Get facets for current query (without candidate filter for broader stats)
-    let facetsQuery = supabaseAdmin
-      .from('exhibitors_prw_2025')
-      .select('*');
+    let facetsQuery = supabaseAdmin.from('exhibitors_prw_2025').select('*');
 
     // Apply same filters for facets
     if (q) {
-      facetsQuery = facetsQuery.or(`name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`);
+      facetsQuery = facetsQuery.or(
+        `name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`
+      );
     }
 
     if (country !== 'all') {
@@ -158,27 +169,32 @@ export async function GET(request: NextRequest) {
       };
 
       const patterns = countryPatterns[country] || [country.toUpperCase()];
-      const countryFilter = patterns.map(pattern => `country.ilike.%${pattern}%`).join(',');
+      const countryFilter = patterns
+        .map((pattern) => `country.ilike.%${pattern}%`)
+        .join(',');
       facetsQuery = facetsQuery.or(countryFilter);
     }
 
-    const { data: allExhibitorsForFacets, error: facetsError } = await facetsQuery;
+    const { data: allExhibitorsForFacets, error: facetsError } =
+      await facetsQuery;
 
     if (facetsError) {
       console.error('Supabase facets query error:', facetsError);
     }
 
-    const allItemsWithComputed = (allExhibitorsForFacets || []).map((exhibitor) => {
-      const computed = computeFields(
-        exhibitor.name,
-        exhibitor.country,
-        exhibitor.address,
-        exhibitor.company_info,
-        exhibitor.activities,
-        exhibitor.target_markets
-      );
-      return { ...exhibitor, ...computed };
-    });
+    const allItemsWithComputed = (allExhibitorsForFacets || []).map(
+      (exhibitor) => {
+        const computed = computeFields(
+          exhibitor.name,
+          exhibitor.country,
+          exhibitor.address,
+          exhibitor.company_info,
+          exhibitor.activities,
+          exhibitor.target_markets
+        );
+        return { ...exhibitor, ...computed };
+      }
+    );
 
     // Country facets - extract country name from address
     const extractCountryName = (address: string): string => {
@@ -225,7 +241,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count);
 
     const response: ExhibitorsResponse = {
-      total: candidate ? filteredItems.length : (total || 0),
+      total: candidate ? filteredItems.length : total || 0,
       items: filteredItems,
       facets: {
         byCountry,

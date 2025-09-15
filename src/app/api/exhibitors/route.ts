@@ -95,10 +95,14 @@ export async function GET(req: NextRequest) {
       }
 
       if (q) {
-        query = query.or(`name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`);
+        query = query.or(
+          `name.ilike.%${q}%,company_info.ilike.%${q}%,activities.ilike.%${q}%,target_markets.ilike.%${q}%`
+        );
       }
 
-      const { data: exhibitors, error } = await query.order('name', { ascending: true });
+      const { data: exhibitors, error } = await query.order('name', {
+        ascending: true,
+      });
 
       if (error) {
         console.error('Supabase query error:', error);
