@@ -13,11 +13,11 @@ export async function login(formData: FormData) {
       email,
       timestamp: new Date().toISOString(),
     });
-    
+
     // Check environment variables first
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     console.log('🔍 Environment check:', {
       NODE_ENV: process.env.NODE_ENV,
       SUPABASE_URL: supabaseUrl ? 'Set' : 'Not set',
@@ -66,7 +66,7 @@ export async function login(formData: FormData) {
     } else {
       console.log('❌ Supabase authentication failed:', supabaseError?.message);
       console.log('❌ Supabase error details:', supabaseError);
-      
+
       // More specific error messages
       if (supabaseError?.message?.includes('Invalid login credentials')) {
         return {
@@ -74,11 +74,14 @@ export async function login(formData: FormData) {
         };
       } else if (supabaseError?.message?.includes('Email not confirmed')) {
         return {
-          error: 'Please check your email and confirm your account before logging in.',
+          error:
+            'Please check your email and confirm your account before logging in.',
         };
       } else {
         return {
-          error: `Authentication failed: ${supabaseError?.message || 'Unknown error'}. Please try again.`,
+          error: `Authentication failed: ${
+            supabaseError?.message || 'Unknown error'
+          }. Please try again.`,
         };
       }
     }
@@ -98,12 +101,14 @@ export async function login(formData: FormData) {
     });
 
     // Return user-friendly error message
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
     // Check for specific error types
     if (errorMessage.includes('fetch')) {
       return {
-        error: 'Network error. Please check your internet connection and try again.',
+        error:
+          'Network error. Please check your internet connection and try again.',
       };
     } else if (errorMessage.includes('timeout')) {
       return {
