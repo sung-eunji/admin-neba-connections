@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useDebounce } from '@/lib/hooks';
 import {
   BarChart,
@@ -440,13 +441,25 @@ export default function NRFExhibitorsPage() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          NRF Europe 2025 — Exhibitors Dashboard
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Explore and analyze exhibitor data from all countries for B2B
-          opportunities
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              NRF Europe 2025 — Exhibitors Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Explore and analyze exhibitor data from all countries for B2B
+              opportunities
+            </p>
+          </div>
+          <div className="mt-2">
+            <Link
+              href="/events/nrf/fashion-brand-retail"
+              className="inline-block px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              View Fashion Brand Retail
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
